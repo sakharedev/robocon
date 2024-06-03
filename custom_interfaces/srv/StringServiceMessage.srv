@@ -1,0 +1,4 @@
+string detect       # Object to detect
+---
+bool success        # Did it achieve it?
+string message      # Message
