@@ -18,7 +18,8 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/detect.py
-  scripts/pub.py
+  scripts/pub_front_left.py
+  scripts/pub_front_right.py
   scripts/detection.py
   DESTINATION lib/${PROJECT_NAME}
 )
