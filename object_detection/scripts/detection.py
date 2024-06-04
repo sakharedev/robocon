@@ -15,9 +15,10 @@ import ament_index_python
 
 class ObjectDetectionNode(Node):
 
-    def __init__(self):
+    def __init__(self, dummy = True):
         super().__init__('object_detection')
 
+        self._dummy = dummy
         self.pkg_path = self.get_package_path('object_detection')
         self.scripts_path = os.path.join(self.pkg_path, 'scripts')
 
@@ -120,24 +121,28 @@ class ObjectDetectionNode(Node):
         if self.current_img is not None:
             frame = self.bridge.imgmsg_to_cv2(self.current_img, desired_encoding='bgr8')
 
-            low_red_raw = (0.0, 80.0, 80.0)
-            high_red_raw = (20.0, 255.0, 255.0)
+            lower_red1 = (0, 50, 50)
+            upper_red1 = (10, 255, 255)
+            lower_red2 = (170, 50, 50)
+            upper_red2 = (180, 255, 255)
 
             image_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-            mask = cv2.inRange(image_hsv, low_red_raw, high_red_raw)
+            # mask1 = cv2.inRange(image_hsv, lower_red1, upper_red1)
+            mask2 = cv2.inRange(image_hsv, lower_red2, upper_red2)
+            mask =  mask2
 
             cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             c_num = 0
-            radius = 100
+            radius = 30
             for i, c in enumerate(cnts):
                 ((x, y), r) = cv2.minEnclosingCircle(c)
                 if r > radius:
                     print('OK=', str(r))
                     c_num += 1
                     cv2.circle(frame, (int(x), int(y)), int(r), (0, 255, 0), 2)
-                    cv2.putText(frame, '#{}', format(c_num), (int(x) - 10, int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                    cv2.putText(frame, '#{}'.format(c_num), (int(x) - 10, int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
                 else:
                     print(r)
 
@@ -151,8 +156,8 @@ class ObjectDetectionNode(Node):
         if self.current_img is not None:
             frame = self.bridge.imgmsg_to_cv2(self.current_img, desired_encoding='bgr8')
 
-            low_blue_raw = (110.0, 50.0, 50.0)
-            high_blue_raw = (130.0, 255.0, 255.0)
+            low_blue_raw = (113.0, 33.0, 175.0)
+            high_blue_raw = (117.0, 94.0, 66.0)
 
             image_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -161,7 +166,7 @@ class ObjectDetectionNode(Node):
             cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             c_num = 0
-            radius = 100
+            radius = 30
             for i, c in enumerate(cnts):
                 ((x, y), r) = cv2.minEnclosingCircle(c)
                 if r > radius:
@@ -191,7 +196,7 @@ class ObjectDetectionNode(Node):
             cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             c_num = 0
-            radius = 100
+            radius = 30
             for i, c in enumerate(cnts):
                 ((x, y), r) = cv2.minEnclosingCircle(c)
                 if r > radius:
@@ -210,7 +215,7 @@ class ObjectDetectionNode(Node):
             
 def main(args=None):
     rclpy.init(args=args)
-    node = ObjectDetectionNode()
+    node = ObjectDetectionNode(dummy = False)
     rclpy.spin(node)
     rclpy.shutdown()
 
