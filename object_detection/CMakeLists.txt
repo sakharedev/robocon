@@ -7,6 +7,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -16,11 +20,22 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+# add_executable(distance scripts/distance.cpp)
+# ament_target_dependencies(distance rclcpp std_msgs sensor_msgs cv_bridge)
+
+# install(TARGETS
+#   distance
+#   DESTINATION lib/${PROJECT_NAME}
+# )
+
 install(PROGRAMS
-  scripts/detect.py
+  # scripts/distance.py
+  # scripts/distance1.py
+  scripts/DetectionAndDistance.py
   scripts/pub_front_left.py
   scripts/pub_front_right.py
   scripts/detection.py
+  scripts/example1.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

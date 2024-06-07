@@ -20,7 +20,7 @@ class Cam2Image(Node):
                 ('depth', 10),
                 ('frequency', 30.0),
                 ('show_camera', False),
-                ('device_id', 4),
+                ('device_id', 2),
                 ('width', 320),
                 ('height', 240),
                 ('burger_mode', False),
@@ -52,7 +52,7 @@ class Cam2Image(Node):
                 raise RuntimeError("Could not open video stream")
 
         qos_profile = self.create_qos_profile()
-        self.pub = self.create_publisher(Image, 'image', qos_profile)
+        self.pub = self.create_publisher(Image, '/camera_right/image', qos_profile)
         self.sub = self.create_subscription(Bool, 'flip_image', self.flip_callback, 10)
         self.timer = self.create_timer(1.0 / self.frequency, self.timer_callback)
 

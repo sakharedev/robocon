@@ -31,6 +31,7 @@ endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/StringServiceMessage.srv"
+  "srv/DistanceServiceMessage.srv"
 )
 
 ament_package()

@@ -1,0 +1,4 @@
+string get_distance       # get distance of object to detect
+---
+bool success        # Did it achieve it?
+string distance      # Message
