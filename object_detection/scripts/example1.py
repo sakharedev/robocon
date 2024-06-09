@@ -25,7 +25,7 @@ class ObjectDetectionNode(Node):
 
         self.publisher = self.create_publisher(Image, 'image_detected_ball', 10)
         self.subscription = self.create_subscription(
-            Image, '/front_right', self.image_callback, 10)
+            Image, '/camera_right/image', self.image_callback, 10)
         
         self.bridge = CvBridge()
 
@@ -93,14 +93,16 @@ class ObjectDetectionNode(Node):
             cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             c_num = 0
-            radius = 10
+            radius = 20
             for i, c in enumerate(cnts):
                 ((x, y), r) = cv2.minEnclosingCircle(c)
                 if r > radius:
                     print('OK=', str(r))
                     c_num += 1
                     cv2.circle(frame, (int(x), int(y)), int(r), (0, 255, 0), 2)
-                    cv2.putText(frame, '#{}'.format(c_num), (int(x) - 10, int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                    # prints x and y coordinates of the center of the circle
+                    cv2.putText(frame, 'x={}, y={}'.format(int(x), int(y)), (int(x) - 10, int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                    # cv2.putText(frame, '#{}'.format(c_num), (int(x) - 10, int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
                 else:
                     print(r)
 

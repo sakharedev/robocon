@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(custom_interfaces REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -21,7 +22,7 @@ install(DIRECTORY
 )
 
 # add_executable(distance scripts/distance.cpp)
-# ament_target_dependencies(distance rclcpp std_msgs sensor_msgs cv_bridge)
+# ament_target_dependencies(distance rclcpp std_msgs sensor_msgs cv_bridge custom_interfaces)
 
 # install(TARGETS
 #   distance
