@@ -10,7 +10,7 @@ def generate_launch_description():
     urdf = os.path.join(
         get_package_share_directory('robot_two'),
         'urdf',
-        'robot.urdf'
+        'mec_rob.xacro'
     )
 
     xacro_node = Node(

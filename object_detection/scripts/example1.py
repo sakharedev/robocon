@@ -126,7 +126,7 @@ class ObjectDetectionNode(Node):
             cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             c_num = 0
-            radius = 10
+            radius = 30
             for i, c in enumerate(cnts):
                 ((x, y), r) = cv2.minEnclosingCircle(c)
                 if r > radius:

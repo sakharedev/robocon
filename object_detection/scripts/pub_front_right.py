@@ -104,12 +104,12 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    finally:
-        if not node.burger_mode:
-            node.cap.release()
-        cv2.destroyAllWindows()
-        node.destroy_node()
-        rclpy.shutdown()
+    # finally:
+    #     if not node.burger_mode:
+    #         node.cap.release()
+    #     cv2.destroyAllWindows()
+    #     node.destroy_node()
+    #     rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
