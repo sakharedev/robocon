@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from geometry_msgs.msg import Twist
 from custom_interfaces.srv import StringServiceMessage
 import cv2
 from cv_bridge import CvBridge
@@ -20,6 +21,7 @@ class DetectionAndDistance(Node):
 
         self.publisher_left_ = self.create_publisher(Image, "/left_detection", 10)
         self.publisher_right_ = self.create_publisher(Image, "/right_detection", 10)
+        self.cmd_vel_publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
 
 
         self.subscription_left_ = self.create_subscription(Image, "/camera_left/image", self.image_left_callback, 10)
@@ -36,6 +38,9 @@ class DetectionAndDistance(Node):
         self.burger_mode = False
         self.current_left_image_ = None
         self.current_right_image_ = None
+
+        self.ball_distance = None
+        self.angle_degrees = None
     
     def get_package_path(self, package_name):
         try:
@@ -67,6 +72,9 @@ class DetectionAndDistance(Node):
             self.detect_and_publish_red_ball_distance()
         elif self.detect_mode == "blue_ball":
             self.detect_and_published_blue_ball_distance()
+
+        if self.ball_distance is not None and self.angle_degrees:
+            self.go_to_goal(self.ball_distance, self.angle_degrees)
 
     def publish_left_image(self, image_msg_left):
         if image_msg_left is not None:
@@ -200,7 +208,7 @@ class DetectionAndDistance(Node):
                     baseline = 270  # in mm
                     camera_size = 0.011  # in mm/px
                     focal_length = 3.6  # in mm
-                    distance = (baseline * focal_length) / (disparity * camera_size)
+                    self.distance = (baseline * focal_length) / (disparity * camera_size)
 
                     # Calculate the angle of the ball with respect to the center of the image
                     image_center_x = left_frame_.shape[1] / 2  # assuming both images have the same dimensions
@@ -209,18 +217,23 @@ class DetectionAndDistance(Node):
                     angle = (angle_left + angle_right) / 2  # average angle
 
                     # Convert angle from radians to degrees
-                    angle_degrees = np.degrees(angle)
+                    self.angle_degrees = np.degrees(angle)
 
                     # Print the distance and angle on both frames
-                    cv2.putText(left_frame_, 'Distance: {:.2f} mm'.format(distance), (10, left_frame_.shape[0] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-                    cv2.putText(left_frame_, 'Angle: {:.2f} degrees'.format(angle_degrees), (10, left_frame_.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    cv2.putText(left_frame_, 'Distance: {:.2f} mm'.format(self.distance), (10, left_frame_.shape[0] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    cv2.putText(left_frame_, 'Angle: {:.2f} degrees'.format(self.angle_degrees), (10, left_frame_.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-                    cv2.putText(right_frame_, 'Distance: {:.2f} mm'.format(distance), (10, right_frame_.shape[0] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-                    cv2.putText(right_frame_, 'Angle: {:.2f} degrees'.format(angle_degrees), (10, right_frame_.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    cv2.putText(right_frame_, 'Distance: {:.2f} mm'.format(self.distance), (10, right_frame_.shape[0] - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    cv2.putText(right_frame_, 'Angle: {:.2f} degrees'.format(self.angle_degrees), (10, right_frame_.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-                    print(f"Distance to the ball: {distance:.2f} mm, Angle: {angle_degrees:.2f} degrees")
+                    print(f"Distance to the ball: {self.distance:.2f} mm, Angle: {self.angle_degrees:.2f} degrees")
                 else:
-                    print("Disparity is zero, cannot compute distance.")
+                    self.distance = None
+                    self.angle_degrees = None
+            else:
+                self.distance = None
+                self.angle_degrees = None
+
 
 
 
@@ -305,6 +318,22 @@ class DetectionAndDistance(Node):
 
         else:
             self.get_logger().error('Image Not Found')
+    
+
+    def go_to_goal(self, distance, angle):
+
+        twist_msg = Twist()
+        k_rho = 0.1
+        k_alpha = 0.1
+
+        twist_msg.linear.x = k_rho * distance
+
+        twist_msg.angular.z = k_alpha * angle
+
+        self.cmd_vel_publisher_.publish(twist_msg)
+
+        self.get_logger().info(f"Moving towards ball: linear velocity: {twist_msg.linear.x}, angular velocity: {twist_msg.angular.z}")
+
 
 
 def main(args=None):

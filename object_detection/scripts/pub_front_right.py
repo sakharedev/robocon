@@ -20,7 +20,7 @@ class Cam2Image(Node):
                 ('depth', 10),
                 ('frequency', 30.0),
                 ('show_camera', False),
-                ('device_id', 2),
+                ('device_id', 0),
                 ('width', 320),
                 ('height', 240),
                 ('burger_mode', False),
