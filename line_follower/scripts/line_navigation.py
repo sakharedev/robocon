@@ -117,7 +117,7 @@ class Image_Subscriber(Node):
     def listener_callback(self, msg):
         current_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         hsv_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2HSV)
-        sensitivity = 70
+        sensitivity = 75
         lower_white = np.array([0, 0, 255 - sensitivity])
         upper_white = np.array([255, sensitivity, 255])
 
