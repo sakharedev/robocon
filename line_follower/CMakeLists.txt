@@ -18,6 +18,7 @@ install(DIRECTORY
 
 install(PROGRAMS
   scripts/line_navigation.py
+  scripts/try_line_navigation.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

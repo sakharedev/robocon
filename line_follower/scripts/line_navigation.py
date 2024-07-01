@@ -100,12 +100,13 @@ from geometry_msgs.msg import Twist
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
+ANGULAR_SPEED = 150.0
+LINEAR_SPEED = 20.0
 
-LINEAR_SPEED = 0.2
 
 # Proportional constant to be applied on speed while turning
 # (Multiplied by the error value)
-KP = 1.5 / 100
+KP = 1.5 / 500
 
 class Image_Subscriber(Node):
     def __init__(self):
@@ -117,7 +118,7 @@ class Image_Subscriber(Node):
     def listener_callback(self, msg):
         current_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         hsv_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2HSV)
-        sensitivity = 75
+        sensitivity = 60
         lower_white = np.array([0, 0, 255 - sensitivity])
         upper_white = np.array([255, sensitivity, 255])
 
@@ -140,15 +141,61 @@ class Image_Subscriber(Node):
             # Handle intersections or loss of line
             error = self.handle_intersection(white_mask, white_segment_image, width)
 
-        cmd.angular.z = float(error) * -KP
+        # cmd.angular.z = (float(error) * -KP ) 
+        cmd.angular.z = -ANGULAR_SPEED
         self.publisher.publish(cmd)
         cv2.imshow('White Segment Image', white_segment_image)
+        self.visualize_roi(current_image)
         cv2.waitKey(1)
+
+    # def get_contour_data(self, mask):
+    #     MIN_AREA_TRACK = 1000
+    #     # MAX_AREA_TRACK = 120
+    #     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    #     line = {}
+    #     for contour in contours:
+    #         M = cv2.moments(contour)
+    #         if MIN_AREA_TRACK < M['m00']:
+    #             cx = int(M['m10'] / M['m00'])
+    #             cy = int(M['m01'] / M['m00'])
+    #             line['x'] = cx
+    #             line['y'] = cy
+
+    #     return line
+    def create_roi_mask(self, shape):
+        mask = np.zeros(shape[:2], dtype=np.uint8)
+        height, width = shape[:2]
+
+        # Define points for the bottom center polygon
+        # Adjust these points as needed to focus on the desired area
+        # polygon = np.array([[
+        #     (int(width * 0.5), height),  # Bottom left
+        #     (int(width * 0.5), height),  # Bottom right
+        #     (width * 5 // 8, int(height * 0.5)),  # Top right
+        #     (width * 3 // 8, int(height * 0.5))  # Top left
+        # ]], dtype=np.int32)
+
+        polygon = np.array([
+            (460, 479),  # Bottom left
+            (152, 479),  # Bottom right
+            (150, 234),  # Top right
+            (500, 234)  # Top left
+        ], dtype=np.int32)
+
+        # Fill the polygon with white
+        cv2.fillPoly(mask, [polygon], 255)
+        return mask
 
     def get_contour_data(self, mask):
         MIN_AREA_TRACK = 1000
-        # MAX_AREA_TRACK = 120
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Ensure the shape is correctly obtained from the mask
+        shape = mask.shape  # This should be a tuple like (height, width, channels)
+        # Pass the correct shape to create_roi_mask
+        roi_mask = self.create_roi_mask(shape)
+        masked_image = cv2.bitwise_and(mask, mask, mask=roi_mask)
+
+        contours, _ = cv2.findContours(masked_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         line = {}
         for contour in contours:
@@ -160,6 +207,34 @@ class Image_Subscriber(Node):
                 line['y'] = cy
 
         return line
+
+    def visualize_roi(self, image):
+        # Create a copy of the image to draw on
+        image_copy = image.copy()
+        height, width = image.shape[:2]
+
+        # Define points for the bottom center polygon
+        # polygon = np.array([
+        #     (int(width * 0.5), height),  # Bottom left
+        #     (int(width * 0.5), height),  # Bottom right
+        #     (width * 5 // 8, int(height * 0.5)),  # Top right
+        #     (width * 3 // 8, int(height * 0.5))  # Top left
+        # ], dtype=np.int32)
+
+        polygon = np.array([
+            (460, 479),  # Bottom left
+            (152, 479),  # Bottom right
+            (150, 234),  # Top right
+            (500, 234)  # Top left
+        ], dtype=np.int32)
+        
+
+        # Draw the polygon on the image
+        cv2.polylines(image_copy, [polygon], isClosed=True, color=(0, 255, 0), thickness=5)
+
+        # Save the image with the drawn polygon
+        cv2.imwrite('roi_visualization.jpg', image_copy)
+        cv2.imshow('ROI Visualization', image_copy) 
 
     def handle_intersection(self, mask, image, width):
         # Intersection detection logic

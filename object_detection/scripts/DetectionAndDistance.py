@@ -24,8 +24,8 @@ class DetectionAndDistance(Node):
         self.cmd_vel_publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
 
 
-        self.subscription_left_ = self.create_subscription(Image, "/camera_left/image", self.image_left_callback, 10)
-        self.subscription_right_ = self.create_subscription(Image, "/camera_right/image", self.image_right_callback, 10)
+        self.subscription_color_ = self.create_subscription(Image, "/camera/color_image", self.image_left_callback, 10)
+        self.subscription_depth_ = self.create_subscription(Image, "/camera/depth_image", self.image_right_callback, 10)
         
 
         self.bridge = CvBridge()
@@ -349,4 +349,6 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+
+
 
