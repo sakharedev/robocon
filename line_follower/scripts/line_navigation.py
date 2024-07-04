@@ -100,20 +100,50 @@ from geometry_msgs.msg import Twist
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
-ANGULAR_SPEED = 150.0
+ANGULAR_SPEED = 200.0
 LINEAR_SPEED = 20.0
+flag = 0
 
 
 # Proportional constant to be applied on speed while turning
 # (Multiplied by the error value)
-KP = 1.5 / 500
+KP = 1.5 / 1000
 
 class Image_Subscriber(Node):
     def __init__(self):
         super().__init__('image_subscriber')
         self.subscription = self.create_subscription(Image, 'camera_right/image', self.listener_callback, 10)
-        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.publisher = self.create_publisher(Twist, '/cmd_vel/line', 10)
         self.bridge = CvBridge()
+
+
+    def visualize_roi(self, image):
+        # Create a copy of the image to draw on
+        image_copy = image.copy()
+        height, width = image.shape[:2]
+
+        # Define points for the bottom center polygon
+        # polygon = np.array([
+        #     (int(width * 0.5), height),  # Bottom left
+        #     (int(width * 0.5), height),  # Bottom right
+        #     (width * 5 // 8, int(height * 0.5)),  # Top right
+        #     (width * 3 // 8, int(height * 0.5))  # Top left
+        # ], dtype=np.int32)
+
+        polygon = np.array([
+            (460, 479),  # Bottom left
+            (152, 479),  # Bottom right
+            (100, 234),  # Top right
+            (500, 234)  # Top left
+        ], dtype=np.int32)
+        
+
+        # Draw the polygon on the image
+        cv2.polylines(image_copy, [polygon], isClosed=True, color=(0, 255, 0), thickness=5)
+
+        # Save the image with the drawn polygon
+        cv2.imwrite('roi_visualization.jpg', image_copy)
+        cv2.imshow('ROI Visualization', image_copy) 
 
     def listener_callback(self, msg):
         current_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -141,8 +171,19 @@ class Image_Subscriber(Node):
             # Handle intersections or loss of line
             error = self.handle_intersection(white_mask, white_segment_image, width)
 
-        # cmd.angular.z = (float(error) * -KP ) 
-        cmd.angular.z = -ANGULAR_SPEED
+        diff = (float(error) * -KP)
+        self.get_logger().info(f"diff: {diff} Error: {(float(error))}")
+        cmd.angular.z = ANGULAR_SPEED
+
+        #right and left turn logic
+        if ((float(error)) * (-KP) < (-45.0)):
+            cmd.angular.z = ANGULAR_SPEED
+        elif((float(error)) * (-KP) > 45.0):
+            cmd.angular.z = -ANGULAR_SPEED
+        else:
+            cmd.linear.x = 0.0
+
+
         self.publisher.publish(cmd)
         cv2.imshow('White Segment Image', white_segment_image)
         self.visualize_roi(current_image)
@@ -179,7 +220,7 @@ class Image_Subscriber(Node):
         polygon = np.array([
             (460, 479),  # Bottom left
             (152, 479),  # Bottom right
-            (150, 234),  # Top right
+            (100, 234),  # Top right
             (500, 234)  # Top left
         ], dtype=np.int32)
 
@@ -188,8 +229,8 @@ class Image_Subscriber(Node):
         return mask
 
     def get_contour_data(self, mask):
-        MIN_AREA_TRACK = 1000
         # Ensure the shape is correctly obtained from the mask
+        MIN_AREA_TRACK = 1000
         shape = mask.shape  # This should be a tuple like (height, width, channels)
         # Pass the correct shape to create_roi_mask
         roi_mask = self.create_roi_mask(shape)
@@ -208,33 +249,7 @@ class Image_Subscriber(Node):
 
         return line
 
-    def visualize_roi(self, image):
-        # Create a copy of the image to draw on
-        image_copy = image.copy()
-        height, width = image.shape[:2]
-
-        # Define points for the bottom center polygon
-        # polygon = np.array([
-        #     (int(width * 0.5), height),  # Bottom left
-        #     (int(width * 0.5), height),  # Bottom right
-        #     (width * 5 // 8, int(height * 0.5)),  # Top right
-        #     (width * 3 // 8, int(height * 0.5))  # Top left
-        # ], dtype=np.int32)
-
-        polygon = np.array([
-            (460, 479),  # Bottom left
-            (152, 479),  # Bottom right
-            (150, 234),  # Top right
-            (500, 234)  # Top left
-        ], dtype=np.int32)
-        
-
-        # Draw the polygon on the image
-        cv2.polylines(image_copy, [polygon], isClosed=True, color=(0, 255, 0), thickness=5)
-
-        # Save the image with the drawn polygon
-        cv2.imwrite('roi_visualization.jpg', image_copy)
-        cv2.imshow('ROI Visualization', image_copy) 
+    
 
     def handle_intersection(self, mask, image, width):
         # Intersection detection logic

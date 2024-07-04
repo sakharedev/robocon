@@ -21,7 +21,7 @@ class DetectionAndDistance(Node):
 
         self.publisher_left_ = self.create_publisher(Image, "/left_detection", 10)
         self.publisher_right_ = self.create_publisher(Image, "/right_detection", 10)
-        self.cmd_vel_publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_publisher_ = self.create_publisher(Twist, '/cmd_vel/ball', 10)
 
 
         self.subscription_color_ = self.create_subscription(Image, "/camera/color_image", self.image_left_callback, 10)
@@ -322,17 +322,15 @@ class DetectionAndDistance(Node):
 
     def go_to_goal(self, distance, angle):
 
-        twist_msg = Twist()
-        k_rho = 0.1
-        k_alpha = 0.1
+        cmd = Twist()
+        # k_rho = 0.1
+        # k_alpha = 0.1
 
-        twist_msg.linear.x = k_rho * distance
+        
 
-        twist_msg.angular.z = k_alpha * angle
+        # self.cmd_vel_publisher_.publish(cmd)
 
-        self.cmd_vel_publisher_.publish(twist_msg)
-
-        self.get_logger().info(f"Moving towards ball: linear velocity: {twist_msg.linear.x}, angular velocity: {twist_msg.angular.z}")
+        self.get_logger().info(f"Moving towards ball: linear velocity: {cmd.linear.x}, angular velocity: {cmd.angular.z}")
 
 
 
