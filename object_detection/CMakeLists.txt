@@ -39,6 +39,7 @@ install(PROGRAMS
   scripts/detection.py
   scripts/example1.py
   scripts/stereo_cam.py
+  scripts/both_camera.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

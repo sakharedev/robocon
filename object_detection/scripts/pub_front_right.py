@@ -5,6 +5,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge
 import cv2
+import imutils
 import numpy as np
 
 class Cam2Image(Node):
@@ -45,8 +46,10 @@ class Cam2Image(Node):
 
         if not self.burger_mode:
             self.cap = cv2.VideoCapture(self.device_id)
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)  # Width resolution
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)  # Height resolution
+            # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)  # Width resolution
+            # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)  # Height resolution
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Width resolution
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)  # Height resolution
             if not self.cap.isOpened():
                 self.get_logger().error("Could not open video stream")
                 raise RuntimeError("Could not open video stream")
@@ -71,7 +74,7 @@ class Cam2Image(Node):
 
     def timer_callback(self):
         if self.burger_mode:
-            frame = self.render_burger(self.width, self.height)
+            frame = self.render_burger(640, 640)
         else:
             ret, frame = self.cap.read()
             self.get_logger().info(f"resolution: {frame.shape[0]}, {frame.shape[1]}")
