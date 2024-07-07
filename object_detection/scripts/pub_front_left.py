@@ -24,7 +24,7 @@ class Cam2Image(Node):
                 ('width', 320),
                 ('height', 240),
                 ('burger_mode', False),
-                ('frame_id', 'camera_frame')
+                ('frame_id', 'camera_frame1')
             ]
         )
 
@@ -45,14 +45,14 @@ class Cam2Image(Node):
 
         if not self.burger_mode:
             self.cap = cv2.VideoCapture(self.device_id)
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)  # Width resolution
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)  # Height resolution
             if not self.cap.isOpened():
                 self.get_logger().error("Could not open video stream")
                 raise RuntimeError("Could not open video stream")
 
         qos_profile = self.create_qos_profile()
-        self.pub = self.create_publisher(Image, '/camera_left/image', qos_profile)
+        self.pub = self.create_publisher(Image, '/camera/left', qos_profile)
         self.sub = self.create_subscription(Bool, 'flip_image', self.flip_callback, 10)
         self.timer = self.create_timer(1.0 / self.frequency, self.timer_callback)
 
@@ -74,6 +74,7 @@ class Cam2Image(Node):
             frame = self.render_burger(self.width, self.height)
         else:
             ret, frame = self.cap.read()
+            self.get_logger().info(f"resolution: {frame.shape[0]}, {frame.shape[1]}")
             if not ret:
                 return
 
@@ -88,7 +89,7 @@ class Cam2Image(Node):
         msg.header.frame_id = self.frame_id
         msg.header.stamp = self.get_clock().now().to_msg()
         self.pub.publish(msg)
-        self.get_logger().info(f"Publishing image #{self.publish_number}")
+        # self.get_logger().info(f"Publishing image #{self.publish_number}")
         self.publish_number += 1
 
     def render_burger(self, width, height):

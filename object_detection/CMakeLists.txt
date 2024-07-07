@@ -18,6 +18,7 @@ find_package(custom_interfaces REQUIRED)
 
 install(DIRECTORY
   scripts
+  launch
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -37,6 +38,7 @@ install(PROGRAMS
   scripts/pub_front_right.py
   scripts/detection.py
   scripts/example1.py
+  scripts/stereo_cam.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
