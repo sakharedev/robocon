@@ -308,6 +308,7 @@ from cv_bridge import CvBridge
 import ament_index_python.packages as ament_index
 import os
 import numpy as np
+import time
 
 class DetectionAndDistance(Node):
 
@@ -319,11 +320,11 @@ class DetectionAndDistance(Node):
         self.publisher_left_ = self.create_publisher(Image, "/left_detection", 10)
         self.publisher_right_ = self.create_publisher(Image, "/right_detection", 10)
         self.cmd_vel_publisher_ = self.create_publisher(Twist, '/cmd_vel/ball', 10)
-        self.string_linear_actuator_publisher_ = self.create_publisher(Twist, "/cmd_vel/ball", 10)
+        self.linear_actuator_publisher_ = self.create_publisher(Twist, "/cmd_vel/ball", 10)
 
         self.subscription_right_ = self.create_subscription(Image, "/camera/right", self.image_right_callback, 10)
         self.subscription_left_ = self.create_subscription(Image, "/camera/left", self.image_left_callback, 10)
-        self.subscription_pick_up_state_ = self.create_subscription(String, "/pick_up_state", self.picked_up_callback, 10)
+        self.subscription_state_ = self.create_subscription(String, "/state", self.state_callback, 10)
 
         self.bridge = CvBridge()
 
@@ -354,10 +355,8 @@ class DetectionAndDistance(Node):
     def image_right_callback(self, msg):
         self.current_right_image_ = msg
 
-    def picked_up_callback(self, data):
-        self.pick_up_state = data
-        if self.pick_up_state == "picked_up":
-            pass
+    def state_callback(self, data):
+        pass
 
 
     def string_service_callback(self, request, response):
@@ -497,7 +496,7 @@ class DetectionAndDistance(Node):
             cnts_right, _ = cv2.findContours(mask_right, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             min_radius = 20  # Lower limit of radius in pixels
-            max_radius = 40  # Upper limit of radius in pixels
+            max_radius = 250  # Upper limit of radius in pixels
 
             largest_radius_left = 0
             left_ball_coordinates = None
@@ -566,7 +565,7 @@ class DetectionAndDistance(Node):
     def go_to_goal(self, distance, angle):
         cmd_vel_msg = Twist()
 
-        goal_distance = 200.0  # desired distance to the ball in mm
+        goal_distance = 250.0  # desired distance to the ball in mm
         goal_angle = 0.0  # desired angle in degrees
 
         k_linear = 0.001  # proportional constant for linear velocity
@@ -600,25 +599,39 @@ class DetectionAndDistance(Node):
             else:
                 twist.linear.x = 0.0  # Stop if within distance threshold
                 twist.angular.z = 0.0  # Stop rotating
-
-        # Publish the twist message
         self.cmd_vel_publisher_.publish(twist)
 
-        # self.cmd_vel_publisher_.publish(cmd_vel_msg)
-
-        if abs(error_distance) < 10 and abs(error_angle) < 5:
+        if self.ball_distance < 250 and self.angle_degrees < 5:
             # Robot is considered to have reached the goal if the error is within thresholds
             self.reached_goal = True
             self.get_logger().info('Reached goal, stopping and moving linear actuator.')
             self.move_linear_actuator()
+
+        # Publish the twist message 
+        
         else:
             self.reached_goal = False
 
     def move_linear_actuator(self):
         # Publish the message to move the linear actuator
         actuator_msg = Twist()
-        actuator_msg.linear.y = 65535.0
-        self.string_linear_actuator_publisher_.publish(actuator_msg)
+        actuator_msg.linear.z = 65535.0
+        self.cmd_vel_publisher_.publish(actuator_msg)
+
+        # Wait for 10 seconds
+        time.sleep(10)
+
+        # Stop the linear actuator
+        actuator_msg.linear.z = 0.0
+        actuator_msg.linear.y = 400.0
+        self.cmd_vel_publisher_.publish(actuator_msg)   
+        actuator_msg.linear.z = -65535.0
+        self.cmd_vel_publisher_.publish(actuator_msg)
+        time.sleep(10)
+        actuator_msg.linear.z = 0.0
+        self.cmd_vel_publisher_.publish(actuator_msg)
+
+
 
 def main(args=None):
     rclpy.init(args=args)

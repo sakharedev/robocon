@@ -40,6 +40,8 @@ install(PROGRAMS
   scripts/example1.py
   scripts/stereo_cam.py
   scripts/both_camera.py
+  scripts/master.py
+  scripts/test.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
